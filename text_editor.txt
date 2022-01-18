@@ -1,0 +1,618 @@
+#include "stdafx.h"
+#include<iostream>
+#include<stdlib.h>
+#include<conio.h>
+#include<Windows.h>
+#include<fstream>
+using namespace std;
+struct Line
+{
+	int Size;
+	char *Cs;
+};
+struct Document
+{
+	int NofLines;
+	Line* Lines;
+};
+void gotoRowCol(int rpos, int cpos);
+void init(Document &MDoc, int & cr, int &cc);
+void Regrow_line(Document &MyDoc, int CursorRow);
+void Addinline(char c, Document &MyDoc, int &CursorRow, int &CursorColumn);
+void Printing(int CursorRow, int CursorColumn, Document &MyDoc, char c);
+bool isSpecial(int &CursorRow, int &CursorCol, char s, Document &MyDoc);
+void ArrowKeys(int &CursorRow, int &CursorColumn, char c, Document MyDoc);
+void Regrow_in_between_line(Document &MyDoc, int CursorRow, int CursorColmn);
+void Addnewline(Document &MyDoc, int &cr, int &cc);
+void Shrink(Document &MyDoc, int &Cr, int &CC);
+void getin(int&g);
+void mainmenu();
+void Savingafile(char *Filename, Document MyDoc);
+void Editior(char &s, int &CursorRow, int &CursorColmn, Document &MyDoc);
+void Getfromfile(int CursorRow, int CursorColumn, Document &MyDoc, char *Filename);
+void Processing(Document MyDoc, int &CursorRow, int &CursorColumn, char &s);
+void Touppercase(char *A);
+void ToLowerCase(char *A);
+void Promenu();
+void ChangeColor(int color);
+void Printing_Beauty(Document MyDoc, int  z, int k, int r);
+void ToFindWord(Document MyDoc);
+void ToFindSentence(Document MyDoc);
+void Replacewords(Document &MyDoc);
+void AddPrefixtoWord(Document& MyDoc);
+void AddPostfixtoWord(Document MyDoc);
+void Reverse(char *A);
+int main()
+{
+	char s;
+	int CursorRow = 0, g;
+	int CursorColumn = 0;
+	Document MyDoc;
+	init(MyDoc, CursorRow, CursorColumn);
+	mainmenu();
+	getin(g);
+	switch (g)
+	{
+	case 1:
+		system("CLS");
+		Editior(s, CursorRow, CursorColumn, MyDoc); break;
+	case 2:
+		Processing(MyDoc, CursorRow, CursorColumn, s);
+		break;
+
+	default:
+		break;
+	}
+}
+void Replacewords(Document &MyDoc)
+{
+	char *A = new char[20];
+
+	cout << "Enter Your Word :";
+	cin >> A;
+	int k = 0, r = 0, c = 0;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		k = 0;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+		{
+			if (A[k] == MyDoc.Lines[i].Cs[j])
+			{
+				r = i;
+				k++;
+			}
+			if (strlen(A) == k)
+			{
+				c = j + 1;
+				goto END;
+			}
+		}
+	}
+END:
+	if (r != 0 || c != 0)
+	{
+		char *B = new char[20];
+		cout << "\nEnter new Word to replace :";
+		cin >> B;
+		int a = 0;
+		for (int i = c - k; i < c || i <= strlen(B); i++)
+		{
+			if (strlen(B) <= k)
+			{
+				MyDoc.Lines[r].Cs[i] = B[a];
+
+			}
+			else
+			{
+				Regrow_in_between_line(MyDoc, r, i);
+				i++;
+				Shrink(MyDoc, r, i);
+				i--;
+				MyDoc.Lines[r].Cs[i] = B[a];
+			}
+			a++;
+		}
+	}
+	else { cout << "The word you Entered in not found in the file" << endl; }
+}
+void AddPrefixtoWord(Document &MyDoc)
+{
+	char *A = new char[20];
+
+	cout << "Enter Your Word :";
+	cin >> A;
+	int k = 0, r = 0, c = 0;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		k = 0;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+		{
+			if (A[k] == MyDoc.Lines[i].Cs[j])
+			{
+				r = i;
+				k++;
+			}
+			if (strlen(A) == k)
+			{
+				c = j + 1;
+				goto END;
+			}
+		}
+	}
+END:
+	if (r != 0 || c != 0)
+	{
+		char *B = new char[20];
+		cout << "Enter Prifix :";
+		cin >> B;
+		int i = strlen(B);
+		do
+		{
+
+			Regrow_in_between_line(MyDoc, r, c);
+			MyDoc.Lines[r].Cs[c] = B[i];
+			i--;
+		} while (B[i] >= 0);
+	}
+	else {
+		cout << "Theres no Word in Docoment" << endl;
+		system("pause");
+	}
+
+}
+void Processing(Document MyDoc, int &CursorRow, int &CursorColumn, char &s)
+{
+	int ch;
+	char A[100] = "Testing.txt";
+	//cin >> A;
+
+	Getfromfile(CursorRow, CursorColumn, MyDoc, A);
+	Printing(CursorRow, CursorColumn, MyDoc, s);
+	do
+	{
+
+		Promenu();
+		getin(ch);
+		switch (ch)
+		{
+		case 1: for (int i = 0; i < MyDoc.NofLines; i++)
+			Touppercase(MyDoc.Lines[i].Cs); break;
+		case 2:for (int i = 0; i < MyDoc.NofLines; i++)
+			ToLowerCase(MyDoc.Lines[i].Cs); break;
+		case 3:ToFindWord(MyDoc); break;
+		case 4: ToFindSentence(MyDoc);
+			break;
+		case 5: Replacewords(MyDoc);
+			break;
+		case 6:
+			AddPrefixtoWord(MyDoc);
+			break;
+		case 7:AddPostfixtoWord(MyDoc);
+			break;
+		default:cout << "Invalid Input" << endl;
+			break;
+		}
+		//	system("CLS");
+		Printing(CursorRow, CursorColumn, MyDoc, s);
+		system("pause");
+	} while (ch);
+
+}
+void AddPostfixtoWord(Document MyDoc)
+{
+	char *A = new char[20];
+
+	cout << "Enter Your Word :";
+	cin >> A;
+	int k = 0, r = 0, c = 0;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		k = 0;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+		{
+			if (A[k] == MyDoc.Lines[i].Cs[j])
+			{
+				r = i;
+				k++;
+			}
+			if (strlen(A) == k)
+			{
+				c = j + 1;
+				goto END;
+			}
+		}
+	}
+END:
+	if (r != 0 || c != 0)
+	{
+		char *B = new char[20];
+		cout << "Enter Postfix :";
+		cin >> B;
+		_strrev(B);
+		int i = 0;
+		while (B[i] != NULL)
+		{
+			Regrow_in_between_line(MyDoc, r, c - k);
+			int te = c - k;
+			MyDoc.Lines[r].Cs[te] = B[i];
+			i++;
+		}
+	}
+	else {
+		cout << "Theres no Word in Docoment" << endl;
+		system("pause");
+	}
+
+}
+void ToFindSentence(Document MyDoc)
+{
+	char *A = new char[20];
+	cout << "Enter Your Sentence to find :";
+	cin.ignore();
+	cin.getline(A, 100, '\n');
+	int k = 0, r = 0, c = 0;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		k = 0;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+		{
+			if (A[k] == MyDoc.Lines[i].Cs[j])
+			{
+				r = i;
+				k++;
+			}
+			if (strlen(A) == k)
+			{
+				c = j + 1;
+				goto END;
+			}
+		}
+	}
+END:
+	if (r != 0 || c != 0)
+	{
+		Printing_Beauty(MyDoc, r, c - k, c);
+		system("pause");
+	}
+	else {
+		cout << "Theres no Word in Docoment" << endl;
+		system("pause");
+	}
+}
+void ToFindWord(Document MyDoc)
+{
+	char *A = new char[20];
+	cout << "Enter Your Word to find :";
+	cin >> A;
+	int k = 0, r = 0, c = 0;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		k = 0;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+		{
+			if (A[k] == MyDoc.Lines[i].Cs[j])
+			{
+				r = i;
+				k++;
+			}
+			if (strlen(A) == k)
+			{
+				c = j + 1;
+				goto END;
+			}
+		}
+	}
+END:
+	if (r != 0 || c != 0)
+	{
+		Printing_Beauty(MyDoc, r, c - k, c);
+		system("pause");
+	}
+	else {
+		cout << "Theres no Word in Docoment" << endl;
+		system("pause");
+	}
+
+}
+void Printing_Beauty(Document MyDoc, int sr, int sc, int ec)
+{
+	system("CLS");
+	for (int j = 0; j < MyDoc.NofLines; j++)
+	{
+		for (int i = 0; i < MyDoc.Lines[j].Size; i++)
+		{
+			if (j == sr && (i >= sc && i < ec))
+			{
+				ChangeColor(3);
+
+			}
+			else
+			{
+				ChangeColor(7);
+
+			}
+			gotoRowCol(j, i);
+			cout << MyDoc.Lines[j].Cs[i];
+
+		}
+	}
+	ChangeColor(7);
+
+}
+void ToLowerCase(char *A)
+{
+	int i = 0;
+	while (A[i] != NULL)
+	{
+		if (int(A[i]) <= 90 && int(A[i]) >= 65)
+			A[i] = char(int(A[i]) + 32);
+		i++;
+	}
+}
+void Touppercase(char *A)
+{
+	int i = 0;
+	while (A[i] != NULL)
+	{
+		if (int(A[i]) <= 122 && int(A[i]) >= 97)
+			A[i] = char(int(A[i]) - 32);
+		i++;
+	}
+}
+void Promenu()
+{
+	cout << "1 For UpperCase" << endl;
+	cout << "2 For LowerCase " << endl;
+	cout << "3 For Finding A Word" << endl;
+	cout << "4 For Fing A SEntence" << endl;
+	cout << "5 For changing word" << endl;
+	cout << "6 For Adding Prefix" << endl;
+	cout << "7 For Postfix" << endl;
+}
+void Editior(char &s, int &CursorRow, int &CursorColumn, Document &MyDoc)
+{
+	init(MyDoc, CursorRow, CursorColumn);
+	while (true)
+	{
+		if (_kbhit())
+		{
+			s = _getch();
+			if (isSpecial(CursorRow, CursorColumn, s, MyDoc))
+			{
+
+			}
+			else
+			{
+				Addinline(s, MyDoc, CursorRow, CursorColumn);
+				Printing(CursorRow, CursorColumn, MyDoc, s);
+			}
+			gotoRowCol(CursorRow, CursorColumn);
+		}
+	}
+}
+void getin(int&g)
+{
+	cin >> g;
+}
+void mainmenu()
+{
+	cout << "1 For Editior" << endl;
+	cout << "2 For Processing" << endl;
+
+}
+void ArrowKeys(int &CursorRow, int &CursorColumn, char c, Document MyDoc)
+{
+	c = _getch();
+	if (c == 72 && CursorRow != 0)
+	{
+
+		CursorRow--;
+		CursorColumn = MyDoc.Lines[CursorRow].Size;
+	}
+	else	if (c == 80)
+	{
+		CursorRow++;
+		CursorColumn = MyDoc.Lines[CursorRow].Size;
+	}
+	else	if (c == 75 && CursorColumn != 0)
+	{
+		CursorColumn--;
+	}
+	else if (c == 77)
+	{
+		CursorColumn++;
+	}
+}
+void Add_Between_Lines(Document &MyDoc, int &CursorRow, int &CursorCol)
+{
+
+}
+void Addnewline(Document& MyDoc, int &cr, int &cc)
+{
+	Line *ptr = new Line[MyDoc.NofLines + 1];
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		ptr[i] = MyDoc.Lines[i];
+	}
+
+	MyDoc.Lines = ptr;
+	MyDoc.Lines[MyDoc.NofLines].Cs = NULL;
+	MyDoc.Lines[MyDoc.NofLines].Size = 0;
+	MyDoc.NofLines++;
+	cr++;
+	cc = 0;
+}
+void init(Document &MyDoc, int & cr, int &cc)
+{
+	MyDoc.NofLines = 1;
+	MyDoc.Lines = new Line[MyDoc.NofLines];
+	MyDoc.Lines[0].Size = 0;
+	MyDoc.Lines[0].Cs = NULL;
+	cr = cc = 0;
+
+}
+void Regrow_line(Document &MyDoc, int CursorRow)
+{
+	int N = MyDoc.Lines[CursorRow].Size;
+	char *New = new char[N];
+
+	for (int i = 0; i < MyDoc.Lines[CursorRow].Size; i++)
+	{
+		New[i] = MyDoc.Lines[CursorRow].Cs[i];
+	}
+	MyDoc.Lines[CursorRow].Size++;
+	MyDoc.Lines[CursorRow].Cs = New;
+}
+void Shrink(Document &MyDoc, int &CursorRow, int &CC)
+{
+	int N = MyDoc.Lines[CursorRow].Size - 1;
+	char *New = new char[N];
+
+	for (int i = 0; i < MyDoc.Lines[CursorRow].Size; i++)
+	{
+		if (i<CC)
+			New[i] = MyDoc.Lines[CursorRow].Cs[i];
+		else
+		{
+			New[i] = MyDoc.Lines[CursorRow].Cs[i + 1];
+
+		}
+	}
+	MyDoc.Lines[CursorRow].Size--;
+	MyDoc.Lines[CursorRow].Cs = New;
+}
+bool isSpecial(int &CursorRow, int &CursorCol, char s, Document &MyDoc)
+{
+	switch (s)
+	{
+	case 0:
+
+	{
+		s = _getch();
+		switch (s)
+		{
+
+		case 60:
+		{
+			char Filename[100];
+			cout << "Enter File Name in Which you want to save Data :";
+			cin >> Filename;
+			Savingafile(Filename, MyDoc);
+			exit(1);
+		}
+
+		default:
+			break;
+		}
+	}
+	break;
+	case 8:
+	{
+		Shrink(MyDoc, CursorRow, CursorCol);
+		Printing(CursorRow, CursorCol, MyDoc, s);
+		CursorCol--;
+	}return true;
+	case 13:
+	{
+		Addnewline(MyDoc, CursorRow, CursorCol);
+		return true;
+	}
+	case -32:
+	{
+		ArrowKeys(CursorRow, CursorCol, s, MyDoc);
+	}return true;
+	default: return false;
+	}
+
+}
+void Savingafile(char *Filename, Document MyDoc)
+{
+	ofstream Rdr(Filename);
+	Rdr << MyDoc.NofLines << endl;
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		Rdr << MyDoc.Lines[i].Size; cout << endl;
+		for (int j = 0; j < MyDoc.Lines[i].Size; j++)
+			Rdr << MyDoc.Lines[i].Cs[j];
+		Rdr << endl;
+	}
+	//Rdr.close();
+}
+void Getfromfile(int CursorRow, int CursorColumn, Document &MyDoc, char *Filename)
+{
+	ifstream Rdr(Filename);
+	if (!Rdr)
+	{
+		cout << "Can't open file " << endl;
+		exit(1);
+	}
+	Rdr >> MyDoc.NofLines;
+	MyDoc.Lines = new Line[MyDoc.NofLines];
+
+	for (int i = 0; i < MyDoc.NofLines; i++)
+	{
+		Rdr >> MyDoc.Lines[i].Size;
+		MyDoc.Lines[i].Cs = new char[MyDoc.Lines[i].Size + 1];
+		Rdr.getline(MyDoc.Lines[i].Cs, MyDoc.Lines[i].Size + 1);
+		Rdr.ignore('\0');
+	}
+	Rdr.close();
+}
+void Printing(int CursorRow, int CursorColumn, Document &MyDoc, char c)
+{
+	system("cls");
+	for (int j = 0; j < MyDoc.NofLines; j++)
+	{
+		for (int i = 0; i < MyDoc.Lines[j].Size; i++)
+		{
+			gotoRowCol(j, i);
+			cout << MyDoc.Lines[j].Cs[i];
+		}
+	}
+}
+void Addinline(char c, Document &MyDoc, int &CursorRow, int &CursorColumn)
+{
+	if (CursorColumn<MyDoc.Lines[CursorRow].Size)
+	{
+		Regrow_in_between_line(MyDoc, CursorRow, CursorColumn);
+	}
+
+	else
+	{
+		Regrow_line(MyDoc, CursorRow);
+	}
+
+	MyDoc.Lines[CursorRow].Cs[CursorColumn] = c;
+	CursorColumn++;
+}
+void Regrow_in_between_line(Document &MyDoc, int CursorRow, int CursorColmn)
+{
+	int N = MyDoc.Lines[CursorRow].Size;
+	char *New = new char[N];
+	for (int i = 0; i < MyDoc.Lines[CursorRow].Size; i++)
+	{
+		if (i<CursorColmn)
+			New[i] = MyDoc.Lines[CursorRow].Cs[i];
+		else
+		{
+			New[i + 1] = MyDoc.Lines[CursorRow].Cs[i];
+		}
+
+	}
+	MyDoc.Lines[CursorRow].Size++;
+	MyDoc.Lines[CursorRow].Cs = New;
+}
+void gotoRowCol(int rpos, int cpos)
+{
+	COORD scrn;
+	HANDLE hOuput = GetStdHandle(STD_OUTPUT_HANDLE);
+	scrn.X = cpos;
+	scrn.Y = rpos;
+	SetConsoleCursorPosition(hOuput, scrn);
+}
+void ChangeColor(int color)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);;
+	SetConsoleTextAttribute(hConsole, color);
+}
+
